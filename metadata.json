@@ -1,0 +1,6 @@
+{
+  "name": "AstraMác",
+  "description": "Gia sư AI phong cách Astra AI chuyên sâu môn Kinh tế chính trị Mác - Lênin với định tuyến đa mô hình Gemini, học theo tài liệu, luyện thi vấn đáp và flashcard đồng bộ đám mây.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

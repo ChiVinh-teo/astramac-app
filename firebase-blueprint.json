@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "StudyDocument": {
+      "title": "StudyDocument",
+      "description": "Uploaded or authored study material (PDF, text, note, or scanned image summary) used as AI grounding context.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the owner." },
+        "title": { "type": "string", "description": "Document title." },
+        "chapterNumber": { "type": "integer", "description": "Chapter index (0 for general, 1-6 for Political Economy chapters)." },
+        "sourceType": { "type": "string", "enum": ["NOTE", "TEXT_FILE", "PDF_FILE", "IMAGE_SCAN"] },
+        "contentText": { "type": "string", "description": "Extracted document text or study notes." },
+        "summary": { "type": "string", "description": "AI-generated structured summary." },
+        "keyConcepts": { "type": "array", "description": "Up to 15 extracted key Marxist-Leninist Political Economy concepts." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()." }
+      },
+      "required": ["userId", "title", "chapterNumber", "sourceType", "contentText", "summary", "keyConcepts", "createdAt", "updatedAt"]
+    },
+    "TutorSession": {
+      "title": "TutorSession",
+      "description": "An AI tutoring conversation in Socratic or Solver mode.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "mode": { "type": "string", "enum": ["SOCRATIC", "SOLVER"] },
+        "modelTier": { "type": "string", "enum": ["FLASH", "ARGON"] },
+        "chapterNumber": { "type": "integer" },
+        "linkedDocumentId": { "type": "string" },
+        "linkedDocumentTitle": { "type": "string" },
+        "lastMessagePreview": { "type": "string" },
+        "messageCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "mode", "modelTier", "chapterNumber", "linkedDocumentId", "linkedDocumentTitle", "lastMessagePreview", "messageCount", "createdAt", "updatedAt"]
+    },
+    "TutorMessage": {
+      "title": "TutorMessage",
+      "description": "Individual turn in a tutoring session.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["USER", "ASSISTANT"] },
+        "content": { "type": "string" },
+        "mode": { "type": "string", "enum": ["SOCRATIC", "SOLVER"] },
+        "modelUsed": { "type": "string" },
+        "hasAttachment": { "type": "boolean" },
+        "attachmentLabel": { "type": "string" },
+        "hintChips": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "role", "content", "mode", "modelUsed", "hasAttachment", "attachmentLabel", "hintChips", "createdAt"]
+    },
+    "StudyFlashcard": {
+      "title": "StudyFlashcard",
+      "description": "3D flip flashcard for Marxist-Leninist Political Economy terms and formulas.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "documentId": { "type": "string" },
+        "chapterNumber": { "type": "integer" },
+        "frontTerm": { "type": "string" },
+        "backDefinition": { "type": "string" },
+        "formula": { "type": "string" },
+        "example": { "type": "string" },
+        "mastered": { "type": "boolean" },
+        "reviewCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "documentId", "chapterNumber", "frontTerm", "backDefinition", "formula", "example", "mastered", "reviewCount", "createdAt", "updatedAt"]
+    },
+    "OralExamAttempt": {
+      "title": "OralExamAttempt",
+      "description": "Oral exam practice attempt with AI grading rubric.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "chapterNumber": { "type": "integer" },
+        "documentId": { "type": "string" },
+        "question": { "type": "string" },
+        "userAnswer": { "type": "string" },
+        "score": { "type": "number" },
+        "strengths": { "type": "array" },
+        "gaps": { "type": "array" },
+        "modelFeedback": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "chapterNumber", "documentId", "question", "userAnswer", "score", "strengths", "gaps", "modelFeedback", "createdAt"]
+    },
+    "ChapterProgress": {
+      "title": "ChapterProgress",
+      "description": "Per-chapter mastery metrics for the 6 Political Economy chapters.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "chapterNumber": { "type": "integer" },
+        "sessionsCompleted": { "type": "integer" },
+        "oralBestScore": { "type": "number" },
+        "masteryPercent": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "chapterNumber", "sessionsCompleted", "oralBestScore", "masteryPercent", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/documents/{docId}": {
+      "schema": { "$ref": "#/entities/StudyDocument" },
+      "description": "User's study documents and AI summaries."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/TutorSession" },
+      "description": "User's AI tutoring sessions."
+    },
+    "/users/{userId}/sessions/{sessionId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/TutorMessage" },
+      "description": "Messages belonging to a tutoring session."
+    },
+    "/users/{userId}/flashcards/{cardId}": {
+      "schema": { "$ref": "#/entities/StudyFlashcard" },
+      "description": "User's Political Economy flashcards."
+    },
+    "/users/{userId}/oralAttempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/OralExamAttempt" },
+      "description": "User's oral exam grading history."
+    },
+    "/users/{userId}/chapterProgress/{chapterId}": {
+      "schema": { "$ref": "#/entities/ChapterProgress" },
+      "description": "User's chapter-by-chapter mastery progress."
+    }
+  }
+}

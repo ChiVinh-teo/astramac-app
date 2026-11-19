@@ -1,0 +1,234 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidStringList(listVal, maxItems) {
+      return listVal is list &&
+             listVal.size() <= maxItems &&
+             (listVal.size() == 0 || listVal[0] is string);
+    }
+
+    function isValidDocument(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'title', 'chapterNumber', 'sourceType',
+               'contentText', 'summary', 'keyConcepts', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'title', 'chapterNumber', 'sourceType',
+               'contentText', 'summary', 'keyConcepts', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+             data.chapterNumber is int && data.chapterNumber >= 0 && data.chapterNumber <= 6 &&
+             data.sourceType in ['NOTE', 'TEXT_FILE', 'PDF_FILE', 'IMAGE_SCAN'] &&
+             data.contentText is string && data.contentText.size() <= 45000 &&
+             data.summary is string && data.summary.size() <= 8000 &&
+             isValidStringList(data.keyConcepts, 15) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSession(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'title', 'mode', 'modelTier', 'chapterNumber',
+               'linkedDocumentId', 'linkedDocumentTitle', 'lastMessagePreview',
+               'messageCount', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'title', 'mode', 'modelTier', 'chapterNumber',
+               'linkedDocumentId', 'linkedDocumentTitle', 'lastMessagePreview',
+               'messageCount', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+             data.mode in ['SOCRATIC', 'SOLVER'] &&
+             data.modelTier in ['FLASH', 'ARGON'] &&
+             data.chapterNumber is int && data.chapterNumber >= 0 && data.chapterNumber <= 6 &&
+             data.linkedDocumentId is string && data.linkedDocumentId.size() <= 128 &&
+             data.linkedDocumentTitle is string && data.linkedDocumentTitle.size() <= 140 &&
+             data.lastMessagePreview is string && data.lastMessagePreview.size() <= 300 &&
+             data.messageCount is int && data.messageCount >= 0 && data.messageCount <= 5000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMessage(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'role', 'content', 'mode', 'modelUsed',
+               'hasAttachment', 'attachmentLabel', 'hintChips', 'createdAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'role', 'content', 'mode', 'modelUsed',
+               'hasAttachment', 'attachmentLabel', 'hintChips', 'createdAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.role in ['USER', 'ASSISTANT'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 25000 &&
+             data.mode in ['SOCRATIC', 'SOLVER'] &&
+             data.modelUsed is string && data.modelUsed.size() <= 64 &&
+             data.hasAttachment is bool &&
+             data.attachmentLabel is string && data.attachmentLabel.size() <= 140 &&
+             isValidStringList(data.hintChips, 6) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidFlashcard(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'documentId', 'chapterNumber', 'frontTerm',
+               'backDefinition', 'formula', 'example', 'mastered',
+               'reviewCount', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'documentId', 'chapterNumber', 'frontTerm',
+               'backDefinition', 'formula', 'example', 'mastered',
+               'reviewCount', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.documentId is string && data.documentId.size() <= 128 &&
+             data.chapterNumber is int && data.chapterNumber >= 0 && data.chapterNumber <= 6 &&
+             data.frontTerm is string && data.frontTerm.size() >= 1 && data.frontTerm.size() <= 300 &&
+             data.backDefinition is string && data.backDefinition.size() >= 1 && data.backDefinition.size() <= 2000 &&
+             data.formula is string && data.formula.size() <= 400 &&
+             data.example is string && data.example.size() <= 1000 &&
+             data.mastered is bool &&
+             data.reviewCount is int && data.reviewCount >= 0 && data.reviewCount <= 100000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidOralAttempt(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'chapterNumber', 'documentId', 'question',
+               'userAnswer', 'score', 'strengths', 'gaps',
+               'modelFeedback', 'createdAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'chapterNumber', 'documentId', 'question',
+               'userAnswer', 'score', 'strengths', 'gaps',
+               'modelFeedback', 'createdAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.chapterNumber is int && data.chapterNumber >= 0 && data.chapterNumber <= 6 &&
+             data.documentId is string && data.documentId.size() <= 128 &&
+             data.question is string && data.question.size() >= 1 && data.question.size() <= 2000 &&
+             data.userAnswer is string && data.userAnswer.size() >= 1 && data.userAnswer.size() <= 10000 &&
+             data.score is number && data.score >= 0 && data.score <= 10 &&
+             isValidStringList(data.strengths, 8) &&
+             isValidStringList(data.gaps, 8) &&
+             data.modelFeedback is string && data.modelFeedback.size() >= 1 && data.modelFeedback.size() <= 4000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidChapterProgress(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'chapterNumber', 'sessionsCompleted',
+               'oralBestScore', 'masteryPercent', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'chapterNumber', 'sessionsCompleted',
+               'oralBestScore', 'masteryPercent', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.chapterNumber is int && data.chapterNumber >= 1 && data.chapterNumber <= 6 &&
+             data.sessionsCompleted is int && data.sessionsCompleted >= 0 && data.sessionsCompleted <= 100000 &&
+             data.oralBestScore is number && data.oralBestScore >= 0 && data.oralBestScore <= 10 &&
+             data.masteryPercent is int && data.masteryPercent >= 0 && data.masteryPercent <= 100 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/documents/{docId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(docId);
+      allow create: if isOwner(userId) && isValidId(docId) && isValidDocument(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(docId) &&
+                       isValidDocument(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'chapterNumber', 'contentText', 'summary', 'keyConcepts', 'updatedAt'
+                       ]);
+    }
+
+    match /users/{userId}/sessions/{sessionId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(sessionId);
+      allow create: if isOwner(userId) && isValidId(sessionId) && isValidSession(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(sessionId) &&
+                       isValidSession(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'mode', 'modelTier', 'linkedDocumentId',
+                         'linkedDocumentTitle', 'lastMessagePreview', 'messageCount', 'updatedAt'
+                       ]);
+
+      match /messages/{messageId} {
+        allow list: if isOwner(userId) && isValidId(sessionId);
+        allow get, delete: if isOwner(userId) && isValidId(sessionId) && isValidId(messageId);
+        allow create: if isOwner(userId) && isValidId(sessionId) && isValidId(messageId) &&
+                         exists(/databases/$(database)/documents/users/$(userId)/sessions/$(sessionId)) &&
+                         isValidMessage(incoming(), userId);
+        allow update: if false;
+      }
+    }
+
+    match /users/{userId}/flashcards/{cardId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(cardId);
+      allow create: if isOwner(userId) && isValidId(cardId) && isValidFlashcard(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(cardId) &&
+                       isValidFlashcard(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'mastered', 'reviewCount', 'updatedAt'
+                       ]);
+    }
+
+    match /users/{userId}/oralAttempts/{attemptId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(attemptId);
+      allow create: if isOwner(userId) && isValidId(attemptId) && isValidOralAttempt(incoming(), userId);
+      allow update: if false;
+    }
+
+    match /users/{userId}/chapterProgress/{chapterId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(chapterId);
+      allow create: if isOwner(userId) && isValidId(chapterId) && isValidChapterProgress(incoming(), userId);
+      allow update: if isOwner(userId) && isValidId(chapterId) &&
+                       isValidChapterProgress(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().chapterNumber == existing().chapterNumber &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'sessionsCompleted', 'oralBestScore', 'masteryPercent', 'updatedAt'
+                       ]);
+    }
+  }
+}
