@@ -12,20 +12,19 @@ import com.example.ui.AstraMacApp
 import com.example.ui.theme.AstraMacTheme
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // Configure Firebase App Check with launch intent before any UI or Firebase calls
-        configureAppCheck(this, intent)
-
-        enableEdgeToEdge()
-
-        setContent {
-            AstraMacTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    AstraMacApp()
-                }
-            }
+    Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+    val sw = java.io.StringWriter()
+    throwable.printStackTrace(java.io.PrintWriter(sw))
+    val errText = sw.toString()
+    runOnUiThread {
+        val tv = android.widget.TextView(this).apply {
+            text = "LỖI KHỞI ĐỘNG APP:\n\n$errText"
+            setTextColor(android.graphics.Color.RED)
+            setBackgroundColor(android.graphics.Color.WHITE)
+            setPadding(32, 64, 32, 32)
+            setTextIsSelectable(true)
         }
+        setContentView(android.widget.ScrollView(this).apply { addView(tv) })
     }
-}
+    }
+    
