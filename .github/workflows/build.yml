@@ -13,6 +13,15 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Ensure default_web_client_id exists
+        run: |
+          mkdir -p app/src/main/res/values
+          FILE="app/src/main/res/values/strings.xml"
+          if [ ! -f "$FILE" ]; then
+            printf '<resources>\n    <string name="default_web_client_id" translatable="false">placeholder-client-id</string>\n</resources>\n' > "$FILE"
+          elif ! grep -q "default_web_client_id" "$FILE"; then
+            sed -i 's|</resources>|    <string name="default_web_client_id" translatable="false">placeholder-client-id</string>\n</resources>|' "$FILE"
+          fi
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Build Debug APK
