@@ -25,12 +25,10 @@ jobs:
       - name: Generate debug keystore
         run: |
           PASS=$(grep -oE 'storePassword[[:space:]=]+["'\''][^"'\'']+["'\'']' app/build.gradle* 2>/dev/null | head -n1 | sed -E 's/.*["'\'']([^"'\'']+)["'\''].*/\1/' || true)
-          ALIAS=$(grep -oE 'keyAlias[[:space:]=]+["'\''][^"'\'']+["'\'']' app/build.gradle* 2>/dev/null | head -n1 | sed -E 's/.*["'\'']([^"'\'']+)["'\''].*/\1/' || true)
           KPASS=$(grep -oE 'keyPassword[[:space:]=]+["'\''][^"'\'']+["'\'']' app/build.gradle* 2>/dev/null | head -n1 | sed -E 's/.*["'\'']([^"'\'']+)["'\''].*/\1/' || true)
           PASS=${PASS:-android}
-          ALIAS=${ALIAS:-androiddebugkey}
           KPASS=${KPASS:-$PASS}
-          keytool -genkeypair -noprompt -keystore debug.keystore -storepass "$PASS" -alias "$ALIAS" -keypass "$KPASS" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          keytool -genkeypair -noprompt -keystore debug.keystore -storepass "$PASS" -alias androiddebugkey -keypass "$KPASS" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           cp debug.keystore app/debug.keystore
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
