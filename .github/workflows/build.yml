@@ -22,6 +22,17 @@ jobs:
           elif ! grep -q "default_web_client_id" "$FILE"; then
             sed -i 's|</resources>|    <string name="default_web_client_id" translatable="false">placeholder-client-id</string>\n</resources>|' "$FILE"
           fi
+      - name: Generate debug keystore
+        run: |
+          if [ ! -f app/debug.keystore ]; then
+            PASS=$(grep -oE 'storePassword[[:space:]=]+["'\''][^"'\'']+["'\'']' app/build.gradle* 2>/dev/null | head -n1 | sed -E 's/.*["'\'']([^"'\'']+)["'\''].*/\1/' || true)
+            ALIAS=$(grep -oE 'keyAlias[[:space:]=]+["'\''][^"'\'']+["'\'']' app/build.gradle* 2>/dev/null | head -n1 | sed -E 's/.*["'\'']([^"'\'']+)["'\''].*/\1/' || true)
+            KPASS=$(grep -oE 'keyPassword[[:space:]=]+["'\''][^"'\'']+["'\'']' app/build.gradle* 2>/dev/null | head -n1 | sed -E 's/.*["'\'']([^"'\'']+)["'\''].*/\1/' || true)
+            PASS=${PASS:-android}
+            ALIAS=${ALIAS:-androiddebugkey}
+            KPASS=${KPASS:-$PASS}
+            keytool -genkeypair -noprompt -keystore app/debug.keystore -storepass "$PASS" -alias "$ALIAS" -keypass "$KPASS" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: Build Debug APK
